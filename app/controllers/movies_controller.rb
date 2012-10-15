@@ -8,13 +8,30 @@ class MoviesController < ApplicationController
 
   def index
     @sort_by = params[:by]
-    if @sort_by == 'title' 
-      @movies = Movie.order('title').all
-    elsif @sort_by == 'date' 
-      @movies = Movie.order('release_date').all
-    else
-      @movies = Movie.all
+    @pfilter = params[:ratings]
+    @all_ratings = {}
+    Movie.ratings.each{ |row|  @all_ratings[row.rating] = (@pfilter == nil) }
+    
+    @all_ratings.inspect
+
+    filter = {}
+    if @pfilter
+      filter[:rating] = []
+      for item, _ in @pfilter do 
+        filter[:rating] << item
+        @all_ratings[item] = true
+      end
     end
+
+    order = nil
+    if @sort_by == 'title' 
+      order = 'title'
+    elsif @sort_by == 'date' 
+      order = 'release_date'
+    end
+
+    @params = {:by => @sort_by, :ratings => @pfilter }
+    @movies = Movie.find(:all, :conditions=> filter, :order => order ) 
   end
 
   def new
