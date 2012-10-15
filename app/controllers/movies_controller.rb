@@ -1,5 +1,4 @@
 class MoviesController < ApplicationController
-
   def show
     id = params[:id] # retrieve movie ID from URI route
     @movie = Movie.find(id) # look up movie by unique ID
@@ -9,11 +8,17 @@ class MoviesController < ApplicationController
   def index
     @sort_by = params[:by]
     @pfilter = params[:ratings]
+    if @sort_by == nil and @pfilter == nil and session[:params] 
+      redirect_to movies_path(session[:params])
+    end
+
+    if @pfilter == nil and session[:filter] 
+      @pfilter = session[:filter]
+    end
+
     @all_ratings = {}
     Movie.ratings.each{ |row|  @all_ratings[row.rating] = (@pfilter == nil) }
     
-    @all_ratings.inspect
-
     filter = {}
     if @pfilter
       filter[:rating] = []
@@ -32,6 +37,8 @@ class MoviesController < ApplicationController
 
     @params = {:by => @sort_by, :ratings => @pfilter }
     @movies = Movie.find(:all, :conditions=> filter, :order => order ) 
+    session[:params] = @params
+    session[:filter] = @pfilter
   end
 
   def new
@@ -41,7 +48,7 @@ class MoviesController < ApplicationController
   def create
     @movie = Movie.create!(params[:movie])
     flash[:notice] = "#{@movie.title} was successfully created."
-    redirect_to movies_path
+    redirect_to movies_path(session[:params])
   end
 
   def edit
@@ -59,7 +66,7 @@ class MoviesController < ApplicationController
     @movie = Movie.find(params[:id])
     @movie.destroy
     flash[:notice] = "Movie '#{@movie.title}' deleted."
-    redirect_to movies_path
+    redirect_to movies_path(session[:params])
   end
 
 end
